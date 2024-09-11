@@ -11,7 +11,7 @@ st.set_page_config(page_title="이기는 편 우리 편", layout="wide")
 
 # 검색 도구 초기화
 search_tool = TavilySearchResults(k=5)
-names_search = {"Pro(찬성)": [search_tool], "Con(반대)": [search_tool]}
+names_search = {"Pros(찬성)": [search_tool], "Cons(반대)": [search_tool]}
 
 # 토론 주제 입력
 topic = st.chat_input("토론 주제를 입력해주세요.")
@@ -161,6 +161,7 @@ import functools
 
 
 def agent_node(state, agent, name):
+    print(f"@@ agent_node info \nstate:{state}\nagent:{agent}\nname:{name}")
     result = agent.invoke(state)
 
     st.write(result)
@@ -175,22 +176,29 @@ def agent_node(state, agent, name):
     }
 
 
-def topic_agent_node(state, name):
+def topic_agent_node(state, agent, name):
+    global agent_descriptions
     agent_descriptions = {name: generate_agent_description(name, topic) for name in names_search}
     st.write(agent_descriptions)
     state["topic"] = specify_topic(topic, agent_descriptions)
     st.write(state["topic"])
     state["sender"] = name
+    print(agent_descriptions)
+
+    global pros_agent
     pros_agent = create_agent(
         llm,
         [search_tool],
         system_message=agent_descriptions["Pros(찬성)"],
     )
+    global cons_agent
     cons_agent = create_agent(
         llm,
         [search_tool],
-        system_message=agent_descriptions["Cons(찬성)"],
+        system_message=agent_descriptions["Cons(반대)"],
     )
+
+    print(f"@@ pros_agent:{pros_agent}\n@@ cons_agent:{cons_agent}")
     return state
 
 
@@ -260,5 +268,4 @@ if topic:
     with st.chat_message("user", avatar="🧑"):
         st.write(topic)
 
-    graph.invoke() ## how?
-
+    graph.invoke({"topic": topic})  ## how?
